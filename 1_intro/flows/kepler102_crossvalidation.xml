@@ -1,0 +1,317 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE entity PUBLIC "-//UC Berkeley//DTD MoML 1//EN"
+    "http://ptolemy.eecs.berkeley.edu/xml/dtd/MoML_1.dtd">
+<entity name="kepler102_crossvalidation" class="ptolemy.actor.TypedCompositeActor">
+    <property name="_createdBy" class="ptolemy.kernel.attributes.VersionAttribute" value="7.1.devel">
+    </property>
+    <property name="_windowProperties" class="ptolemy.actor.gui.WindowPropertiesAttribute" value="{bounds={256, 18, 951, 491}, maximized=false}">
+    </property>
+    <property name="_vergilSize" class="ptolemy.actor.gui.SizeAttribute" value="[677, 369]">
+    </property>
+    <property name="_vergilZoomFactor" class="ptolemy.data.expr.ExpertParameter" value="1.0">
+    </property>
+    <property name="_vergilCenter" class="ptolemy.data.expr.ExpertParameter" value="{338.5, 184.5}">
+    </property>
+    <property name="SDF Director" class="ptolemy.domains.sdf.kernel.SDFDirector">
+        <property name="iterations" class="ptolemy.data.expr.Parameter" value="0">
+        </property>
+        <property name="vectorizationFactor" class="ptolemy.data.expr.Parameter" value="1">
+        </property>
+        <property name="allowDisconnectedGraphs" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+        <property name="allowRateChanges" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+        <property name="constrainBufferSizes" class="ptolemy.data.expr.Parameter" value="true">
+        </property>
+        <property name="period" class="ptolemy.data.expr.Parameter" value="0.0">
+        </property>
+        <property name="synchronizeToRealTime" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+        <property name="timeResolution" class="ptolemy.actor.parameters.SharedParameter" value="1E-10">
+        </property>
+        <property name="Scheduler" class="ptolemy.domains.sdf.kernel.SDFScheduler">
+            <property name="constrainBufferSizes" class="ptolemy.data.expr.Parameter" value="constrainBufferSizes">
+            </property>
+        </property>
+<property name="KeplerDocumentation" class="ptolemy.vergil.basic.KeplerDocumentationAttribute">
+<property name="description" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>null</configure></property>
+<property name="author" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Steve Neuendorffer</configure></property>
+<property name="version" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>null</configure></property>
+<property name="userLevelDocumentation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>&#10;&lt;p&gt;The SDF Director is often used to oversee fairly simple, sequential workflows in which the director can determine the order of actor invocation from the workflow. Types of workflows that would run well under an SDF Director include processing and reformatting tabular data, converting one data type to another, and reading and plotting a series of data points. A workflow in which an image is read, processed (rotated, scaled, clipped, filtered, etc.), and then displayed, is also an example of a sequential workflow that requires a director simply to ensure that each actor fires in the proper order (i.e., that each actor executes only after it receives its required inputs).&lt;/p&gt;&#10;&#10;&lt;p&gt;The SDF Director is very efficient and will not tax system resources with overhead. However, this efficiency requires that certain conditions be met, namely that the data consumption and production rate of each actor in an SDF workflow be constant and declared. If an actor reads one piece of data and calculates and outputs a single result, it must always read and output a single token of data. This data rate cannot change during workflow execution and, in general, workflows that require dynamic scheduling and/or flow control cannot use this director. Additionally, the SDF Director has no understanding of passing time (at least by default), and actors that depend on a notion of time may not work as expected. For example, a TimedPlotter actor will plot all values at time zero when used in SDF. &lt;/p&gt;&#10;&#10;&lt;p&gt;By default, the SDF Director requires that all actors in its workflow be connected. Otherwise, the director cannot account for concurrency between disconnected workflow parts. Usually, a PN Director should be used for workflows that contain disconnected actors; however, the SDF Director's allowDisconnectedGraphs parameter may also be set to true. The SDF Director will then schedule each disconnected &quot;island&quot; independently. The director cannot infer the sequential relationship between disconnected actors (i.e., nothing forces the director to finish executing all actors on one island before firing actors on another). However, the order of execution within each island should be correct. Usually, disconnected graphs in an SDF model indicate an error.&lt;/p&gt;&#10; &#10;&lt;p&gt;Because SDF Directors schedule actors to fire only after they receive their inputs, workflows that require loops (feeding an actor's output back into its input port for further processing) can cause &quot;deadlock&quot; errors. The deadlock errors occur because the actor depends on its own output value as an initial input. To fix this problem, use a SampleDelay actor to generate and inject an initial input value into the workflow.&lt;/p&gt;&#10;&#10;&lt;p&gt;The SDF Director determines the order in which actors execute and how many times each actor needs to be fired to complete a single iteration of the workflow. This schedule is calculated BEFORE the director begins to iterate the workflow. Because the SDF Director calculates a schedule in advance, it is quite efficient. However, SDF workflows must be static. In other words, the same number of tokens must be consumed/produced at every iteration of the workflow. Workflows that require dynamic control structures, such as a BooleanSwitch actor that sends output on one of two ports depending on the value of a 'control', cannot be used with an SDF Director because the number of tokens on each output can change for each execution.&lt;/p&gt;&#10;&#10;&lt;p&gt;Unless otherwise specified, the SDF Director assumes that each actor consumes and produces exactly one token per channel on each firing. Actors that do not follow the one-token-per-channel firing convention (e.g., Repeat or Ramp) must declare the number of tokens they produce or consume via the appropriate parameters. &lt;/p&gt;&#10;&#10;&lt;p&gt;The number of times a workflow is iterated is controlled by the director's iterations parameter. By default, this parameter is set to &quot;0&quot;. Note that &quot;0&quot; does not mean &quot;no iterations.&quot; Rather, &quot;0&quot; means that the workflow will iterate forever. Values greater than zero specify the actual number of times the director should execute the entire workflow. A value of 1, meaning that the director will run the workflow once, is often the best setting when building an SDF workflow. &lt;/p&gt;&#10;&#10;&lt;p&gt;The amount of data processed by an SDF workflow is a function of both the number of times the workflow iterates and the value of the director's vectorizationFactor parameter. The vectorizationFactor is used to increase the efficiency of a workflow by increasing the number of times actors fire each time the workflow iterates. If the parameter is set to a positive integer (other than 1), the director will fire each actor the specified number of times more than normal. The default is 1, indicating that no vectorization should be performed. Keep in mind that changing the vectorizationFactor parameter changes the meaning of a nested SDF workflow and may cause deadlock in a workflow that uses it. &lt;/p&gt;&#10;&#10;&lt;p&gt;The SDF Director has several advanced parameters that are generally only relevant when an SDF workflow contains composite components. In most cases the period, timeResolution, synchronizeToRealTime, allowRateChanges, timeResolution, and constrainBufferSizes parameters can be left at their default values.&lt;/p&gt;&#10;&#10;&lt;p&gt;For more information about the SDF Director, see the Ptolemy documentation (http://ptolemy.eecs.berkeley.edu/papers/05/ptIIdesign3-domains/ptIIdesign3-domains.pdf).&lt;/p&gt;&#10;&#10;</configure></property>
+<property name="prop:allowDisconnectedGraphs" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Specify whether to allow disconnected actors in the workflow (by default, all actors are required to be connected). If disconnected actors are permitted, the SDF Director will schedule each disconnected 'island' independently. Nothing &quot;forces&quot; the director to finish executing all actors on one island before firing actors on another. However, the order of execution within each island should be correct. Usually, disconnected graphs in an SDF workflow indicate an error.</configure></property>
+<property name="prop:allowRateChanges" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Specify whether dynamic rate changes are permitted or not. By default, rate changes are not permitted, and the director will perform a check to disallow such workflows. If the parameter is selected, then workflows that require rate parameters to be modified during execution are valid, and the SDF Director will dynamically compute a new schedule at runtime. This is an advanced parameter that can usually be left at its default value.</configure></property>
+<property name="prop:timeResolution" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The time precision used by this director. All time values are rounded to the nearest multiple of this number. The value is a double that defaults to &quot;1E-10&quot; (which is 10-10). This is an advanced parameter that can usually be left at its default value.</configure></property>
+<property name="prop:constrainBufferSizes" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Specify whether buffer sizes are fixed. By default, buffers are fixed, and attempts to write to the buffer that cause the buffer to exceed its scheduled size result in an error. This is an advanced parameter that can usually be left at its default value.</configure></property>
+<property name="prop:iterations" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Specify the number of times a workflow is iterated. By default, this parameter is set to &quot;0&quot;. Note that &quot;0&quot; does not mean &quot;no iterations.&quot; Rather, &quot;0&quot; means that the workflow will iterate forever. Values greater than zero specify the actual number of times the director should execute the entire workflow. A value of 1, meaning that the director will run the workflow once, is often the best setting when building an SDF workflow. </configure></property>
+<property name="prop:vectorizationFactor" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The vectorizationFactor is used to increase the efficiency of a workflow by increasing the number of times actors fire each time the workflow iterates. If the parameter is set to a positive integer (other than 1), the director will fire each actor the specified number of times more than normal. The default is 1, indicating that no vectorization should be performed. Keep in mind that changing the vectorizationFactor parameter changes the meaning of a nested SDF workflow and may cause deadlock in a workflow that uses it. </configure></property>
+<property name="prop:synchronizeToRealTime" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Specify whether the execution should synchronize to real time or not. By default, the director does not synchronize to real time. If synchronize is selected, the director will only process the workflow when elapsed real time matches the product of the period parameter and the iteration count. Note: if the period parameter has a value of 0.0 (the default), then selecting this parameter has no effect. This is an advanced parameter that can usually be left at its default value.</configure></property>
+<property name="prop:period" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The time period of each iteration. The value is a double that defaults to 0.0, which means that the director does not increment workflow time. If the value greater than 0.0, the actor will increment workflow time each time it fires. This is an advanced parameter that can usually be left at its default value. </configure></property>
+</property>        <property name="entityId" class="org.kepler.moml.NamedObjId" value="urn:lsid:kepler-project.org:director:1:1">
+        </property>
+        <property name="class" class="ptolemy.kernel.util.StringAttribute" value="ptolemy.domains.sdf.kernel.SDFDirector">
+            <property name="id" class="ptolemy.kernel.util.StringAttribute" value="urn:lsid:kepler-project.org:directorclass:1:1">
+            </property>
+        </property>
+        <property name="semanticType00" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:1:1#Director">
+        </property>
+        <property name="semanticType11" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:2:1#Director">
+        </property>
+        <property name="_location" class="ptolemy.kernel.util.Location" value="[40.0, 35.0]">
+        </property>
+    </property>
+    <entity name="FileReader" class="weka.ptolemy.actor.FileReader">
+        <property name="datasetFile" class="weka.ptolemy.data.expr.ExtFileParameter" value="/home/fracpete/development/datasets/uci/nominal/labor.arff">
+        </property>
+        <property name="customLoaderInUse" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+        <property name="customLoader" class="weka.ptolemy.data.expr.GoeParameter" value="">
+            <property name="class" class="ptolemy.data.expr.Parameter" value="&quot;weka.core.converters.AbstractFileLoader&quot;">
+            </property>
+            <property name="defValue" class="ptolemy.data.expr.Parameter" value="&quot;weka.core.converters.ArffLoader&quot;">
+            </property>
+            <property name="canChangeClass" class="ptolemy.data.expr.Parameter" value="true">
+            </property>
+        </property>
+<property name="KeplerDocumentation" class="ptolemy.vergil.basic.KeplerDocumentationAttribute">
+<property name="description" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Component for loading Weka datasets from files.</configure></property>
+<property name="author" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>FracPete</configure></property>
+<property name="version" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>$Revision: 1526 $</configure></property>
+<property name="userLevelDocumentation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>&#10;            &lt;p&gt;The FileReader loads any file that the Weka converters can&#10;            load, based on the file extension.&lt;/p&gt;&#10;            &lt;p&gt;The reader outputs a weka.core.Instances object&lt;/p&gt;&#10;         </configure></property>
+<property name="port:instance" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs a weka.core.Instance object, as long as there are&#10;         Instance objects available.</configure></property>
+<property name="port:trigger" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>A multiport that has no declared type (in other words, &#10;         the port can accept any data type: double, int, array, etc.) If the &#10;         port is connected, the actor will not fire until the trigger port &#10;         receives an input token. Connecting the port is optional, but useful &#10;         when scheduling the actor to perform at a certain time.</configure></property>
+<property name="port:dataset" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs a weka.core.Instances object. Has precedence over &#10;         the &quot;instance&quot; port if connected as well.</configure></property>
+<property name="port:datasetFile" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a file as input.</configure></property>
+<property name="port:finished" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs boolean tokens: false if file not yet fully read, &#10;         true if reading finished.</configure></property>
+<property name="prop:datasetFile" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The file to load and turn into a weka.core.Instances&#10;         object.</configure></property>
+<property name="prop:customLoader" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The custom loader setup to use.</configure></property>
+<property name="prop:customLoaderInUse" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Whether to use a user-specified loader configuration (= TRUE)&#10;         or just use the default loader for the file format associated with the&#10;         extension of the file (= FALSE).</configure></property>
+</property>        <property name="entityId" class="org.kepler.moml.NamedObjId" value="urn:lsid:kepler-project.org:actor:2001:1">
+        </property>
+        <property name="class" class="ptolemy.kernel.util.StringAttribute" value="weka.ptolemy.actor.FileReader">
+            <property name="id" class="ptolemy.kernel.util.StringAttribute" value="urn:lsid:kepler-project.org:class:2001:1">
+            </property>
+        </property>
+        <property name="semanticType00" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:1:1#WekaActor">
+        </property>
+        <property name="semanticType11" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:2:1#LocalInput">
+        </property>
+        <property name="semanticType22" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:4:1#Weka">
+        </property>
+        <property name="_location" class="ptolemy.kernel.util.Location" value="[35.0, 160.0]">
+        </property>
+    </entity>
+    <entity name="Missing values" class="weka.ptolemy.actor.Filter">
+        <property name="filter" class="weka.ptolemy.data.expr.GoeParameter" value="weka.filters.unsupervised.attribute.ReplaceMissingValues">
+            <property name="class" class="ptolemy.data.expr.Parameter" value="&quot;weka.filters.Filter&quot;">
+            </property>
+            <property name="defValue" class="ptolemy.data.expr.Parameter" value="&quot;weka.filters.AllFilter&quot;">
+            </property>
+            <property name="canChangeClass" class="ptolemy.data.expr.Parameter" value="true">
+            </property>
+        </property>
+        <property name="streaming" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+<property name="KeplerDocumentation" class="ptolemy.vergil.basic.KeplerDocumentationAttribute">
+<property name="description" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Wrapper for Weka filters.</configure></property>
+<property name="author" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>FracPete</configure></property>
+<property name="version" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>$Revision: 1526 $</configure></property>
+<property name="userLevelDocumentation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>&#10;            &lt;p&gt;Represents a wrapper for Weka filters.&lt;/p&gt;&#10;            &lt;p&gt;A second dataset can be filtered through the initialized filter&#10;            via the inputBatch port and collected via the outputBatch port.&lt;/p&gt;&#10;            &lt;p&gt;After the first batch has been processed, weka.core.Instance&#10;            objects can be passed through via the inputSingle port and &#10;            collected on the outputSingle port.&lt;/p&gt;&#10;         </configure></property>
+<property name="port:outputSingle" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs the processed single instance, a weka.core.Instances object.</configure></property>
+<property name="port:outputTwo" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs the processed second dataset, a weka.core.Instances object.</configure></property>
+<property name="port:outputOne" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs the processed dataset, a weka.core.Instances object.</configure></property>
+<property name="port:inputSingle" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a weka.core.Instance object for passing &#10;         through the initialized filter, in case of batch filters. Stream &#10;         filters (i.e., ones that import weka.filters.StreamableFilter) can use&#10;         this port immediately (the first weka.core.Instance object passed &#10;         through the filter will act as the first batch of data to setup the &#10;         filter). </configure></property>
+<property name="port:inputTwo" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts another weka.core.Instances object for passing &#10;         through the initialized filter.</configure></property>
+<property name="port:inputOne" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a weka.core.Instances object for building the filter&#10;         with.</configure></property>
+<property name="prop:filter" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a classname of a filter with its options.</configure></property>
+<property name="prop:streaming" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Enables streaming, i.e., the immediate use of the &#10;         inputSingle/outputSingle ports, regardless of whether the filter is&#10;         implementing the weka.filters.StreamableFilter interface or not.&#10;         If the filter is not initialized, then the first weka.core.Instance&#10;         object coming through will be used as first batch of data to initialize&#10;         the filter.</configure></property>
+</property>        <property name="entityId" class="org.kepler.moml.NamedObjId" value="urn:lsid:kepler-project.org:actor:2008:1">
+        </property>
+        <property name="class" class="ptolemy.kernel.util.StringAttribute" value="weka.ptolemy.actor.Filter">
+            <property name="id" class="ptolemy.kernel.util.StringAttribute" value="urn:lsid:kepler-project.org:class:2008:1">
+            </property>
+        </property>
+        <property name="semanticType00" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:1:1#WekaActor">
+        </property>
+        <property name="semanticType11" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:4:1#Weka">
+        </property>
+        <property name="_location" class="ptolemy.kernel.util.Location" value="[250.0, 160.0]">
+        </property>
+    </entity>
+    <entity name="CrossValidationEvaluator" class="weka.ptolemy.actor.CrossValidationEvaluator">
+        <property name="showComplexityStatistics" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+        <property name="seed" class="ptolemy.data.expr.Parameter" value="1">
+        </property>
+        <property name="folds" class="ptolemy.data.expr.Parameter" value="10">
+        </property>
+<property name="KeplerDocumentation" class="ptolemy.vergil.basic.KeplerDocumentationAttribute">
+<property name="description" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Evaluates a classifier or clusterer via cross-validation.</configure></property>
+<property name="author" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>FracPete</configure></property>
+<property name="version" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>$Revision: 1526 $</configure></property>
+<property name="userLevelDocumentation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>&#10;            &lt;p&gt;Evaluates a classifier or clusterer via cross-validation.&lt;/p&gt;&#10;            &lt;p&gt;The user can change number of folds and seed value for &#10;            randomizing the dataset.&lt;/p&gt;&#10;            &lt;p&gt;If the class is nominal, the data gets stratified after &#10;            randomization.&lt;/p&gt;&#10;            &lt;p&gt;In case of clusterers, an existing class attribute will be &#10;            removed automatically from the data.&lt;/p&gt;&#10;         </configure></property>
+<property name="port:seed" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts an integer as seed value.</configure></property>
+<property name="port:scheme" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a weka.core.Classifier or a &#10;         weka.clusterers.Clusterer object. This classifier or clusterer must &#10;         not be built already.</configure></property>
+<property name="port:summary" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The generated evaluation summary.</configure></property>
+<property name="port:evaluation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The generated weka.classifiers.Evaluation object (there &#10;         is no output for clusterers). In case of classifiers this object can &#10;         be used to display an ROC.</configure></property>
+<property name="port:dataset" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The data set to use for cross-validation, of type &#10;         weka.core.Instances.</configure></property>
+<property name="port:models" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The generated classifier or clusterer models as array, an &#10;         element one for each train/test pair.</configure></property>
+<property name="prop:showComplexityStatistics" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Whether to print the complexity statistics as well (only &#10;         for classifiers).</configure></property>
+<property name="prop:seed" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The seed value for the java.util.Random object used in the&#10;         randomization.</configure></property>
+<property name="prop:folds" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The number of folds for this cross-validation.</configure></property>
+</property>        <property name="entityId" class="org.kepler.moml.NamedObjId" value="urn:lsid:kepler-project.org:actor:2005:1">
+        </property>
+        <property name="class" class="ptolemy.kernel.util.StringAttribute" value="weka.ptolemy.actor.CrossValidationEvaluator">
+            <property name="id" class="ptolemy.kernel.util.StringAttribute" value="urn:lsid:kepler-project.org:class:2005:1">
+            </property>
+        </property>
+        <property name="semanticType00" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:1:1#WekaActor">
+        </property>
+        <property name="semanticType11" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:4:1#Weka">
+        </property>
+        <property name="_location" class="ptolemy.kernel.util.Location" value="[375.0, 160.0]">
+        </property>
+    </entity>
+    <entity name="Classifier" class="weka.ptolemy.actor.Classifier">
+        <property name="classifier" class="weka.ptolemy.data.expr.GoeParameter" value="weka.classifiers.trees.DecisionStump">
+            <property name="class" class="ptolemy.data.expr.Parameter" value="&quot;weka.classifiers.Classifier&quot;">
+            </property>
+            <property name="defValue" class="ptolemy.data.expr.Parameter" value="&quot;weka.classifiers.rules.ZeroR&quot;">
+            </property>
+            <property name="canChangeClass" class="ptolemy.data.expr.Parameter" value="true">
+            </property>
+        </property>
+<property name="KeplerDocumentation" class="ptolemy.vergil.basic.KeplerDocumentationAttribute">
+<property name="description" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Wrapper for Weka classifiers.</configure></property>
+<property name="author" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>FracPete</configure></property>
+<property name="version" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>$Revision: 1526 $</configure></property>
+<property name="userLevelDocumentation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>&#10;            &lt;p&gt;Represents a wrapper for Weka classifiers.&lt;/p&gt;&#10;         </configure></property>
+<property name="port:setup" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Returns a fully configured but not trained classifier &#10;         object. This is used as input in the Evaluator actors.</configure></property>
+<property name="port:distribution" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Returns the class probability array. For numeric classes,&#10;         this array is always of length 1.</configure></property>
+<property name="port:trigger" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>A multiport that has no declared type (in other words, &#10;         the port can accept any data type: double, int, array, etc.) If the &#10;         port is connected, the actor will not fire until the trigger port &#10;         receives an input token. Connecting the port is optional, but useful &#10;         when scheduling the actor to perform at a certain time.</configure></property>
+<property name="port:model" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs the model string that the built classifier returns&#10;         via its toString() method. Incremental classifiers&#10;         broadcast the model string everytime they got updated.</configure></property>
+<property name="port:built" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Outputs the built classifier. Incremental classifiers&#10;         broadcast the model everytime they got updated.</configure></property>
+<property name="port:classifyInstance" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a weka.core.Instance as soon as the classifier has&#10;         been built and generates a classification and a distribution for&#10;         this instance.</configure></property>
+<property name="port:classification" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Returns the classification of a weka.core.Instance that got&#10;         passed via the &quot;classifyInstance&quot; input port. For numeric classes this&#10;         represents the regression, for nominal ones the class label&#10;         index.</configure></property>
+<property name="port:build" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a weka.core.Instances object for building the classifier&#10;         in batch mode or a weka.core.Instance object for updating an &#10;         incremental classifer.</configure></property>
+<property name="prop:classifier" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a classname of a classifier with its options.</configure></property>
+</property>        <property name="entityId" class="org.kepler.moml.NamedObjId" value="urn:lsid:kepler-project.org:actor:2002:1">
+        </property>
+        <property name="class" class="ptolemy.kernel.util.StringAttribute" value="weka.ptolemy.actor.Classifier">
+            <property name="id" class="ptolemy.kernel.util.StringAttribute" value="urn:lsid:kepler-project.org:class:2002:1">
+            </property>
+        </property>
+        <property name="semanticType00" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:1:1#WekaActor">
+        </property>
+        <property name="semanticType11" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:4:1#Weka">
+        </property>
+        <property name="_location" class="ptolemy.kernel.util.Location" value="[250.0, 35.0]">
+        </property>
+    </entity>
+    <entity name="ClassSelector" class="weka.ptolemy.actor.ClassSelector">
+        <property name="classIndex" class="ptolemy.data.expr.StringParameter" value="last">
+        </property>
+        <property name="override" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+        <property name="regexName" class="ptolemy.data.expr.StringParameter" value=".*">
+        </property>
+<property name="KeplerDocumentation" class="ptolemy.vergil.basic.KeplerDocumentationAttribute">
+<property name="description" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Generates train and test set after randomizing the dataset&#10;         and splits the data according to the given percentage.</configure></property>
+<property name="author" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>FracPete</configure></property>
+<property name="version" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>$Revision: 1526 $</configure></property>
+<property name="userLevelDocumentation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>&#10;            &lt;p&gt;Generates train/test set based on random split.&lt;/p&gt;&#10;         </configure></property>
+<property name="port:input" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts a weka.core.Instances/weka.core.Instance object &#10;         which class index will be set.</configure></property>
+<property name="port:output" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The weka.core.Instances/weka.core.Instance object with &#10;         (possibly) modified class index.</configure></property>
+<property name="prop:regexName" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Generates a subset of attributes to choose the class &#10;         attribute from. Default setting selects all attributes.</configure></property>
+<property name="prop:classIndex" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The class index to set (1-based). &quot;first&quot; and &quot;last&quot; are&#10;         accepted as well. This index applies to the subset of attributes that&#10;         the regular expression on the attribute name (= &quot;regexName&quot;) returns.&#10;         E.g., if the regular expression is &quot;att[0-9]&quot; and the index is &quot;last&quot;&#10;         then the last of the attributes matching this pattern will be chosen&#10;         as class attribute.</configure></property>
+<property name="prop:override" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Whether to override an existing class attribute index. If&#10;         one is already set, e.g., when loading data from an XRFF file, then&#10;         the class index won't be changed unless this option is enabled.</configure></property>
+</property>        <property name="entityId" class="org.kepler.moml.NamedObjId" value="urn:lsid:kepler-project.org:actor:2006:1">
+        </property>
+        <property name="class" class="ptolemy.kernel.util.StringAttribute" value="weka.ptolemy.actor.ClassSelector">
+            <property name="id" class="ptolemy.kernel.util.StringAttribute" value="urn:lsid:kepler-project.org:class:2006:1">
+            </property>
+        </property>
+        <property name="semanticType00" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:1:1#WekaActor">
+        </property>
+        <property name="semanticType11" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:4:1#Weka">
+        </property>
+        <property name="_location" class="ptolemy.kernel.util.Location" value="[140.0, 160.0]">
+        </property>
+    </entity>
+    <entity name="TextDisplay" class="weka.ptolemy.actor.TextDisplay">
+        <property name="_windowProperties" class="ptolemy.actor.gui.WindowPropertiesAttribute">
+        </property>
+        <property name="_paneSize" class="ptolemy.actor.gui.SizeAttribute">
+        </property>
+        <property name="plotWidth" class="ptolemy.data.expr.Parameter" value="600">
+        </property>
+        <property name="plotHeight" class="ptolemy.data.expr.Parameter" value="600">
+        </property>
+        <property name="outputSaveToFile" class="ptolemy.data.expr.Parameter" value="false">
+        </property>
+        <property name="outputDir" class="weka.ptolemy.data.expr.ExtFileParameter" value="/home/fracpete">
+        </property>
+        <property name="outputPrefix" class="ptolemy.data.expr.StringParameter" value="">
+        </property>
+        <property name="outputSuffix" class="ptolemy.data.expr.StringParameter" value=".txt">
+        </property>
+<property name="KeplerDocumentation" class="ptolemy.vergil.basic.KeplerDocumentationAttribute">
+<property name="description" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Displays text.</configure></property>
+<property name="author" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>FracPete</configure></property>
+<property name="version" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>$Revision: 1526 $</configure></property>
+<property name="userLevelDocumentation" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>&#10;            &lt;p&gt;Displays text.&lt;/p&gt;&#10;            &lt;p&gt;Each arriving text element will be added as separate entry in &#10;            history list.&lt;/p&gt;&#10;         </configure></property>
+<property name="port:input" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Accepts text or other objects (uses their toString() &#10;         method for displaying them).</configure></property>
+<property name="prop:outputSaveToFile" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>Whether to save the outputs automatically to files.</configure></property>
+<property name="prop:outputPrefix" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>An optional prefix for the filenames.</configure></property>
+<property name="prop:outputDir" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The directory to store the outputs in.</configure></property>
+<property name="prop:rowsDisplayed" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The number of rows being displayed.</configure></property>
+<property name="prop:columnsDisplayed" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The number of columns being displayed.</configure></property>
+<property name="prop:outputSuffix" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>An optional suffix for the filenames.</configure></property>
+<property name="prop:plotWidth" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The width of the history and text.</configure></property>
+<property name="prop:plotHeight" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The height of the history and text.</configure></property>
+<property name="prop:title" class="ptolemy.kernel.util.ConfigurableAttribute"><configure>The title of the frame.</configure></property>
+</property>        <property name="entityId" class="org.kepler.moml.NamedObjId" value="urn:lsid:kepler-project.org:actor:2024:1">
+        </property>
+        <property name="class" class="ptolemy.kernel.util.StringAttribute" value="weka.ptolemy.actor.TextDisplay">
+            <property name="id" class="ptolemy.kernel.util.StringAttribute" value="urn:lsid:kepler-project.org:class:2024:1">
+            </property>
+        </property>
+        <property name="semanticType00" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:1:1#WekaActor">
+        </property>
+        <property name="semanticType11" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:2:1#GraphicalOutput">
+        </property>
+        <property name="semanticType22" class="org.kepler.sms.SemanticType" value="urn:lsid:localhost:onto:4:1#Weka">
+        </property>
+        <property name="_location" class="ptolemy.kernel.util.Location" value="[545.0, 160.0]">
+        </property>
+    </entity>
+    <relation name="relation2" class="ptolemy.actor.TypedIORelation">
+        <property name="width" class="ptolemy.data.expr.Parameter" value="1">
+        </property>
+    </relation>
+    <relation name="relation3" class="ptolemy.actor.TypedIORelation">
+        <property name="width" class="ptolemy.data.expr.Parameter" value="1">
+        </property>
+    </relation>
+    <relation name="relation5" class="ptolemy.actor.TypedIORelation">
+        <property name="width" class="ptolemy.data.expr.Parameter" value="1">
+        </property>
+    </relation>
+    <relation name="relation6" class="ptolemy.actor.TypedIORelation">
+        <property name="width" class="ptolemy.data.expr.Parameter" value="1">
+        </property>
+    </relation>
+    <relation name="relation" class="ptolemy.actor.TypedIORelation">
+        <property name="width" class="ptolemy.data.expr.Parameter" value="1">
+        </property>
+    </relation>
+    <link port="FileReader.dataset" relation="relation5"/>
+    <link port="Missing values.inputOne" relation="relation6"/>
+    <link port="Missing values.outputOne" relation="relation2"/>
+    <link port="CrossValidationEvaluator.scheme" relation="relation3"/>
+    <link port="CrossValidationEvaluator.summary" relation="relation"/>
+    <link port="CrossValidationEvaluator.dataset" relation="relation2"/>
+    <link port="Classifier.setup" relation="relation3"/>
+    <link port="ClassSelector.input" relation="relation5"/>
+    <link port="ClassSelector.output" relation="relation6"/>
+    <link port="TextDisplay.input" relation="relation"/>
+</entity>
