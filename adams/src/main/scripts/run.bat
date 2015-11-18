@@ -27,7 +27,7 @@ set ERROR_CODE=0
 @REM of arguments (up to the command line limit, anyway).
 set CMD_LINE_ARGS=
 set MEMORY=2g
-set MAIN=knir.gui.Main
+set MAIN=adams.gui.Main
 set JVM=
 set CPA=
 set OPTION=

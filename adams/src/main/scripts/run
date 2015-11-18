@@ -91,7 +91,7 @@ fi
 
 # check options
 MEMORY=2g
-MAIN=knir.gui.Main
+MAIN=adams.gui.Main
 JVM=
 CPA=
 ARGS=
