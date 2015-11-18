@@ -154,7 +154,7 @@
             <configuration>
               <classifier>flows</classifier>
               <failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
-              <outputDirectory>${project.build.directory}/flows-dependencies</outputDirectory>
+              <outputDirectory>${project.build.directory}/flows</outputDirectory>
               <includeGroupIds>${project.groupId}</includeGroupIds>
             </configuration>
           </execution>
