@@ -1,0 +1,90 @@
+# Project: adams
+# Date: 2015-11-19 14:34:30
+# User: fracpete
+#
+adams.flow.control.Flow
+	-actor
+		adams.flow.standalone.CallableActors
+			-actor
+				adams.flow.sink.SimplePlot
+					-writer
+						adams.gui.print.NullWriter
+					-paintlet
+						adams.gui.visualization.sequence.LinePaintlet
+					-overlay-paintlet
+						adams.gui.visualization.sequence.NullPaintlet
+					-mouse-click-action
+						adams.flow.sink.sequenceplotter.NullClickAction
+					-color-provider
+						adams.gui.visualization.core.DefaultColorProvider
+					-axis-x
+						adams.gui.visualization.core.AxisPanelOptions
+							-label
+							x
+							-tick-generator
+								adams.gui.visualization.core.axis.FancyTickGenerator
+									-num-ticks
+									20
+							-nth-value
+							2
+							-width
+							40
+							-custom-format
+							0.0
+					-axis-y
+						adams.gui.visualization.core.AxisPanelOptions
+							-label
+							y
+							-tick-generator
+								adams.gui.visualization.core.axis.FancyTickGenerator
+							-nth-value
+							2
+							-width
+							60
+							-custom-format
+							0.0
+	-actor
+		adams.flow.source.ForLoop
+			-upper
+			100
+	-actor
+		adams.flow.transformer.MathExpression
+			-name
+			MathExpression-1
+			-expression
+			X/10
+	-actor
+		adams.flow.control.Branch
+			-branch
+				adams.flow.control.Sequence
+					-actor
+						adams.flow.transformer.MathExpression
+							-expression
+							2*(X/2-floor(0.5 + X/2))
+					-actor
+						adams.flow.transformer.MakePlotContainer
+							-plot-name
+							period 2
+					-actor
+						adams.flow.sink.CallableSink
+							-callable
+							SimplePlot
+			-branch
+				adams.flow.control.Sequence
+					-name
+					Sequence-1
+					-actor
+						adams.flow.transformer.MathExpression
+							-expression
+							2*(X/3.7-floor(0.5 + X/3.7))
+					-actor
+						adams.flow.transformer.MakePlotContainer
+							-plot-name
+							period 3.7
+					-actor
+						adams.flow.sink.CallableSink
+							-callable
+							SimplePlot
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+
