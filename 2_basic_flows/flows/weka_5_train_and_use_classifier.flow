@@ -1,0 +1,90 @@
+# Project: adams
+# Date: 2015-11-23 15:17:13
+# User: fracpete
+#
+adams.flow.control.Flow
+	-actor
+		adams.flow.standalone.CallableActors
+			-actor
+				adams.flow.source.WekaClassifierSetup
+					-classifier
+						weka.classifiers.trees.J48
+							-C
+							0.25
+							-M
+							2
+			-actor
+				adams.flow.source.SequenceSource
+					-name
+					model
+					-actor
+						adams.flow.source.StorageValue
+							-storage-name
+							model
+					-actor
+						adams.flow.control.ContainerValuePicker
+							-value
+							Model
+							-switch-outputs
+							true
+	-actor
+		adams.flow.source.Start
+	-actor
+		adams.flow.control.Trigger
+			-name
+			train
+			-tee
+				adams.flow.source.SelectFile
+					-stop-if-canceled
+					true
+					-custom-stop-message
+					Select train ARFF file
+					-extension
+					arff
+			-tee
+				adams.flow.transformer.WekaFileReader
+					-loader
+						weka.core.converters.AArffLoader
+			-tee
+				adams.flow.transformer.WekaClassSelector
+			-tee
+				adams.flow.transformer.WekaTrainClassifier
+			-tee
+				adams.flow.transformer.SetStorageValue
+					-storage-name
+					model
+	-actor
+		adams.flow.control.Trigger
+			-name
+			use model
+			-tee
+				adams.flow.source.SelectFile
+					-stop-if-canceled
+					true
+					-custom-stop-message
+					Select test ARFF file
+					-extension
+					arff
+			-tee
+				adams.flow.transformer.WekaFileReader
+					-loader
+						weka.core.converters.AArffLoader
+			-tee
+				adams.flow.transformer.WekaClassSelector
+			-tee
+				adams.flow.transformer.WekaInstanceBuffer
+					-operation
+					INSTANCES_TO_INSTANCE
+			-tee
+				adams.flow.transformer.WekaClassifying
+					-model-actor
+					model
+					-on-the-fly
+					true
+			-tee
+				adams.flow.sink.Display
+					-writer
+						adams.data.io.output.NullWriter
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+
