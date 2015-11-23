@@ -1,0 +1,102 @@
+# Project: adams
+# Date: 2015-11-23 17:57:34
+# User: fracpete
+#
+adams.flow.control.Flow
+	-actor
+		adams.flow.standalone.CallableActors
+			-actor
+				adams.flow.source.WekaClassifierSetup
+					-classifier
+					@{classifier}
+			-actor
+				adams.flow.sink.HistoryDisplay
+					-entry-name-variable
+					combination
+	-actor
+		adams.flow.source.SelectFile
+			-stop-if-canceled
+			true
+			-custom-stop-message
+			Select ARFF files
+			-extension
+			arff
+	-actor
+		adams.flow.transformer.WekaFileReader
+			-loader
+				weka.core.converters.AArffLoader
+	-actor
+		adams.flow.control.Tee
+			-tee
+				adams.flow.transformer.WekaInstancesInfo
+					-type
+					RELATION_NAME
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					relation
+	-actor
+		adams.flow.transformer.WekaClassSelector
+	-actor
+		adams.flow.transformer.SetStorageValue
+			-storage-name
+			data
+	-actor
+		adams.flow.control.Trigger
+			-name
+			iterate classifiers
+			-tee
+				adams.flow.source.StringConstants
+					-string
+					weka.classifiers.trees.RandomForest -I 250 -K 0 -S 1 -num-slots 1
+					-string
+					weka.classifiers.functions.SMO -C 1.0 -L 0.001 -P 1.0E-12 -N 0 -M -V -1 -W 1 -K \"weka.classifiers.functions.supportVector.RBFKernel -G 0.01 -C 250007\"
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					classifier
+			-tee
+				adams.flow.control.Tee
+					-tee
+						adams.flow.transformer.StringReplace
+							-find
+							([a-zA-Z\\.]+)(\\.)([a-zA-Z\\.]+ )(.*)
+							-replace
+							$3
+					-tee
+						adams.flow.transformer.SetVariable
+							-var-name
+							cls_short
+			-tee
+				adams.flow.control.Trigger
+					-name
+					combination
+					-tee
+						adams.flow.source.CombineVariables
+							-expression
+							@{relation}/@{cls_short}
+					-tee
+						adams.flow.transformer.SetVariable
+							-var-name
+							combination
+			-tee
+				adams.flow.control.Trigger
+					-name
+					evaluate
+					-tee
+						adams.flow.source.StorageValue
+							-storage-name
+							data
+					-tee
+						adams.flow.transformer.WekaCrossValidationEvaluator
+							-output
+								weka.classifiers.evaluation.output.prediction.Null
+					-tee
+						adams.flow.transformer.WekaEvaluationSummary
+					-tee
+						adams.flow.sink.CallableSink
+							-callable
+							HistoryDisplay
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+

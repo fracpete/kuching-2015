@@ -1,0 +1,94 @@
+# Project: adams
+# Date: 2015-11-23 16:46:14
+# User: fracpete
+#
+adams.flow.control.Flow
+	-actor
+		adams.flow.standalone.CallableActors
+			-actor
+				adams.flow.source.WekaClassifierSetup
+					-classifier
+						weka.classifiers.functions.LinearRegression
+							-S
+							0
+							-R
+							1.0E-8
+	-actor
+		adams.flow.source.SelectFile
+			-annotation
+			use bodyfat.arff
+			-stop-if-canceled
+			true
+			-custom-stop-message
+			Select train ARFF file
+			-extension
+			arff
+	-actor
+		adams.flow.transformer.WekaFileReader
+			-loader
+				weka.core.converters.AArffLoader
+	-actor
+		adams.flow.transformer.WekaClassSelector
+	-actor
+		adams.flow.transformer.WekaCrossValidationEvaluator
+			-output
+				weka.classifiers.evaluation.output.prediction.Null
+	-actor
+		adams.flow.control.Branch
+			-branch
+				adams.flow.control.Sequence
+					-actor
+						adams.flow.sink.WekaClassifierErrors
+							-writer
+								adams.gui.print.NullWriter
+							-scaler
+								adams.data.weka.predictions.AutoScaler
+									-scaler
+										adams.data.weka.predictions.RelativeNumericErrorScaler
+			-branch
+				adams.flow.control.Sequence
+					-name
+					Sequence-1
+					-actor
+						adams.flow.transformer.WekaAccumulatedError
+					-actor
+						adams.flow.sink.SimplePlot
+							-writer
+								adams.gui.print.NullWriter
+							-paintlet
+								adams.gui.visualization.sequence.CirclePaintlet
+							-overlay-paintlet
+								adams.gui.visualization.sequence.NullPaintlet
+							-mouse-click-action
+								adams.flow.sink.sequenceplotter.NullClickAction
+							-color-provider
+								adams.gui.visualization.core.DefaultColorProvider
+							-axis-x
+								adams.gui.visualization.core.AxisPanelOptions
+									-label
+									x
+									-tick-generator
+										adams.gui.visualization.core.axis.FancyTickGenerator
+											-num-ticks
+											20
+									-nth-value
+									2
+									-width
+									40
+									-custom-format
+									0.0
+							-axis-y
+								adams.gui.visualization.core.AxisPanelOptions
+									-label
+									y
+									-tick-generator
+										adams.gui.visualization.core.axis.FancyTickGenerator
+									-nth-value
+									2
+									-width
+									60
+									-custom-format
+									0.0
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+

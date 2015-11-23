@@ -1,0 +1,90 @@
+# Project: adams
+# Date: 2015-11-23 16:30:12
+# User: fracpete
+#
+adams.flow.control.Flow
+	-actor
+		adams.flow.standalone.CallableActors
+			-actor
+				adams.flow.source.WekaClassifierSetup
+					-classifier
+						weka.classifiers.trees.J48
+							-C
+							0.25
+							-M
+							2
+			-actor
+				adams.flow.sink.HistoryDisplay
+					-entry-name-variable
+					confidence
+	-actor
+		adams.flow.source.Start
+	-actor
+		adams.flow.control.Trigger
+			-name
+			load training data
+			-tee
+				adams.flow.source.SelectFile
+					-annotation
+					use labor.arff
+					-stop-if-canceled
+					true
+					-custom-stop-message
+					Select train ARFF file
+					-extension
+					arff
+			-tee
+				adams.flow.transformer.WekaFileReader
+					-loader
+						weka.core.converters.AArffLoader
+			-tee
+				adams.flow.transformer.WekaClassSelector
+			-tee
+				adams.flow.transformer.SetStorageValue
+					-storage-name
+					data
+	-actor
+		adams.flow.control.Trigger
+			-name
+			iterate confidence
+			-tee
+				adams.flow.source.StringConstants
+					-string
+					0.2
+					-string
+					0.25
+					-string
+					0.3
+					-string
+					0.35
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					confidence
+			-tee
+				adams.flow.transformer.SetProperty
+					-property
+					classifier.confidenceFactor
+					-actor-name
+					WekaClassifierSetup
+			-tee
+				adams.flow.control.Trigger
+					-name
+					evaluate
+					-tee
+						adams.flow.source.StorageValue
+							-storage-name
+							data
+					-tee
+						adams.flow.transformer.WekaCrossValidationEvaluator
+							-output
+								weka.classifiers.evaluation.output.prediction.Null
+					-tee
+						adams.flow.transformer.WekaEvaluationSummary
+					-tee
+						adams.flow.sink.CallableSink
+							-callable
+							HistoryDisplay
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+
