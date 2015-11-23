@@ -133,4 +133,5 @@ paper/bigmine15-adams-paper.kilepr
 .~lock.*
 target
 THIRD-PARTY.properties
+*.iml
 
