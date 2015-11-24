@@ -1,0 +1,85 @@
+# Project: adams
+# Date: 2015-11-24 17:00:56
+# User: fracpete
+#
+adams.flow.control.Flow
+	-actor
+		adams.flow.source.SelectFile
+			-stop-if-canceled
+			true
+			-file-chooser-title
+			Select "state" dataset
+			-extension
+			csv
+	-actor
+		adams.flow.control.Tee
+			-name
+			output file
+			-tee
+				adams.flow.transformer.Convert
+					-conversion
+						adams.data.conversion.ReplaceFileExtension
+							-extension
+							_features.arff
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					outfile
+	-actor
+		adams.flow.transformer.WekaFileReader
+			-loader
+				weka.core.converters.SpreadSheetLoader
+					-reader
+					adams.data.io.input.CsvSpreadSheetReader -data-row-type adams.data.spreadsheet.DenseDataRow -spreadsheet-type adams.data.spreadsheet.SpreadSheet -missing "" -text-columns 1,2
+					-conversion
+					adams.data.conversion.SpreadSheetToWekaInstances
+	-actor
+		adams.flow.transformer.WekaFilter
+			-name
+			WekaFilter-1
+			-annotation
+			remove unnecessary attributes
+			-filter
+				weka.filters.unsupervised.attribute.RemoveByName
+					-E
+					(TEXT|State)
+					-V
+	-actor
+		adams.flow.transformer.WekaFilter
+			-annotation
+			create features
+			-filter
+				weka.filters.unsupervised.attribute.StringToWordVector
+					-R
+					first
+					-W
+					1000
+					-prune-rate
+					-1.0
+					-N
+					0
+					-stemmer
+					weka.core.stemmers.NullStemmer
+					-stopwords-handler
+					weka.core.stopwords.Null
+					-M
+					1
+					-tokenizer
+					weka.core.tokenizers.TwitterNLPTokenizer -use-lower-case -cleaner "weka.core.tokenizers.cleaners.MultiCleaner -cleaner weka.core.tokenizers.cleaners.NormalizeDuplicateChars -cleaner \"weka.core.tokenizers.cleaners.RemoveEmoticons -model /home/fracpete/documents/presentations/adams/kuching-2015/4_twitter/flows/data/AFINN-emoticon-8.txt\" -cleaner weka.core.tokenizers.cleaners.RemoveNonWordCharTokens"
+	-actor
+		adams.flow.control.Branch
+			-branch
+				adams.flow.sink.WekaInstancesDisplay
+					-writer
+						adams.gui.print.NullWriter
+			-branch
+				adams.flow.sink.WekaFileWriter
+					-output
+					@{outfile}
+					-saver
+						weka.core.converters.ArffSaver
+							-decimal
+							6
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+

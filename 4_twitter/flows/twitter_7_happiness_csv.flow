@@ -1,0 +1,130 @@
+# Project: adams
+# Date: 2015-11-24 16:42:41
+# User: fracpete
+#
+adams.flow.control.Flow
+	-annotation
+	Demonstrates how to replay archived tweets (generated with ADAMS).\nCreates CSV file from archives, labeling happy and sad tweets.
+	-actor
+		adams.flow.source.Start
+	-actor
+		adams.flow.control.Trigger
+			-name
+			select output file
+			-tee
+				adams.flow.source.SelectFile
+					-stop-if-canceled
+					true
+					-file-chooser-title
+					Select output file
+					-extension
+					csv
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					outfile
+	-actor
+		adams.flow.control.Trigger
+			-name
+			process archives
+			-tee
+				adams.flow.source.SelectFile
+					-stop-if-canceled
+					true
+					-file-chooser-title
+					Select tweet archives
+					-extension
+					.csv.gz,.csv
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					archive
+			-tee
+				adams.flow.control.Trigger
+					-name
+					replay
+					-tee
+						adams.flow.source.TweetReplay
+							-replay
+								adams.data.io.input.SpreadSheetConverterArchive
+									-archive
+									@{archive}
+					-tee
+						adams.flow.control.Continue
+							-annotation
+							allow only happy/sad tweets
+							-condition
+								adams.flow.condition.bool.Not
+									-condition
+										adams.flow.condition.bool.TwitterFilterExpression
+											-expression
+											text:"😊" or text:"😂" or text:"😫" or text:"😭"
+					-tee
+						adams.flow.control.Tee
+							-name
+							happy or sad?
+							-tee
+								adams.flow.control.IfThenElse
+									-condition
+										adams.flow.condition.bool.TwitterFilterExpression
+											-expression
+											text:"😊" or text:"😂"
+									-then
+										adams.flow.transformer.SetVariable
+											-name
+											then
+											-var-name
+											state
+											-var-value
+											happy
+									-else
+										adams.flow.transformer.SetVariable
+											-name
+											else
+											-var-name
+											state
+											-var-value
+											sad
+					-tee
+						adams.flow.transformer.TwitterConverter
+							-converter
+								adams.data.twitter.SpreadSheetConverter
+									-field
+									ID
+									-field
+									CREATED
+									-field
+									TEXT
+									-field
+									GEO_LATITUDE
+									-field
+									GEO_LONGITUDE
+									-field
+									LANGUAGE_CODE
+									-field
+									COUNTRY_CODE
+									-data-row-type
+										adams.data.spreadsheet.DenseDataRow
+									-spreadsheet-type
+										adams.data.spreadsheet.SpreadSheet
+					-tee
+						adams.flow.transformer.SpreadSheetInsertColumn
+							-after
+							true
+							-header
+							State
+							-value
+							@{state}
+					-tee
+						adams.flow.sink.SpreadSheetFileWriter
+							-output
+							@{outfile}
+							-writer
+								adams.data.io.output.CsvSpreadSheetWriter
+									-appending
+									true
+									-always-quote-text
+									true
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+
