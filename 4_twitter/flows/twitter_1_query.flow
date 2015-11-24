@@ -1,0 +1,54 @@
+# Project: adams
+# Date: 2015-11-24 14:53:35
+# User: fracpete
+#
+adams.flow.control.Flow
+	-annotation
+	Example flow for querying the Twitter API.\nFor query examples, see the following web page:\nhttps://dev.twitter.com/rest/public/search
+	-actor
+		adams.flow.standalone.TwitterConnection
+	-actor
+		adams.flow.source.TwitterQuery
+			-query
+			movie -scary :)
+			-max-tweets
+			200
+	-actor
+		adams.flow.transformer.TwitterConverter
+			-converter
+				adams.data.twitter.TextConverter
+					-separator
+					\t
+					-quote
+					true
+	-actor
+		adams.flow.control.Count
+			-tee
+				adams.flow.transformer.Convert
+					-conversion
+						adams.data.conversion.AnyToString
+			-tee
+				adams.flow.transformer.StringReplace
+					-find
+					$
+					-replace
+					:
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					count
+			-condition
+				adams.flow.condition.bool.Counting
+	-actor
+		adams.flow.transformer.StringReplace
+			-find
+			^
+			-replace
+			@{count}
+	-actor
+		adams.flow.sink.Display
+			-writer
+				adams.data.io.output.NullWriter
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+

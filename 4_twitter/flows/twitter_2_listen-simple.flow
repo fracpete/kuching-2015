@@ -1,0 +1,66 @@
+# Project: adams
+# Date: 2015-11-24 13:51:12
+# User: fracpete
+#
+adams.flow.control.Flow
+	-annotation
+	Example flow for listening to the sample stream\nof Twitter status updates.\nRequires actual twitter user credentials to work.
+	-actor
+		adams.flow.standalone.TwitterConnection
+	-actor
+		adams.flow.source.TwitterListener
+	-actor
+		adams.flow.control.Branch
+			-branch
+				adams.flow.control.Sequence
+					-name
+					display
+					-actor
+						adams.flow.transformer.TwitterConverter
+							-converter
+								adams.data.twitter.TextConverter
+									-field
+									CREATED
+									-field
+									USER_NAME
+									-field
+									TEXT
+									-separator
+									\t
+					-actor
+						adams.flow.sink.Display
+							-writer
+								adams.data.io.output.NullWriter
+			-branch
+				adams.flow.control.Sequence
+					-name
+					file
+					-actor
+						adams.flow.transformer.TwitterConverter
+							-converter
+								adams.data.twitter.SpreadSheetConverter
+									-field
+									ID
+									-field
+									CREATED
+									-field
+									USER_NAME
+									-field
+									TEXT
+									-data-row-type
+										adams.data.spreadsheet.DenseDataRow
+									-spreadsheet-type
+										adams.data.spreadsheet.SpreadSheet
+					-actor
+						adams.flow.sink.SpreadSheetFileWriter
+							-output
+							${TMP}/twitter_updates.csv
+							-writer
+								adams.data.io.output.CsvSpreadSheetWriter
+									-appending
+									true
+									-always-quote-text
+									true
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+

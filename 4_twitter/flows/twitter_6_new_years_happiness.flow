@@ -1,0 +1,240 @@
+# Project: adams
+# Date: 2015-11-24 13:40:04
+# User: fracpete
+#
+adams.flow.control.Flow
+	-annotation
+	Demonstrates how to replay archived tweets (generated with ADAMS).\nPlots the distribution of happy and sad smileys per minute.
+	-actor
+		adams.flow.standalone.CallableActors
+			-actor
+				adams.flow.sink.SequencePlotter
+					-writer
+						adams.gui.print.NullWriter
+					-paintlet
+						adams.gui.visualization.sequence.LinePaintlet
+							-paint-all
+							true
+					-overlay-paintlet
+						adams.gui.visualization.sequence.CirclePaintlet
+					-marker-paintlet
+						adams.flow.sink.sequenceplotter.NoMarkers
+					-error-paintlet
+						adams.flow.sink.sequenceplotter.NoErrorPaintlet
+					-mouse-click-action
+						adams.flow.sink.sequenceplotter.NullClickAction
+					-color-provider
+						adams.gui.visualization.core.DefaultColorProvider
+					-overlay-color-provider
+						adams.gui.visualization.core.DefaultColorProvider
+					-title
+					Happy/Sad distribution
+					-axis-x
+						adams.gui.visualization.core.AxisPanelOptions
+							-label
+							time
+							-type
+							TIME
+							-tick-generator
+								adams.gui.visualization.core.axis.FancyTickGenerator
+							-nth-value
+							1
+							-width
+							40
+							-custom-format
+							HH:mm
+					-axis-y
+						adams.gui.visualization.core.AxisPanelOptions
+							-label
+							count
+							-tick-generator
+								adams.gui.visualization.core.axis.FancyTickGenerator
+							-nth-value
+							2
+							-width
+							60
+							-custom-format
+							0
+					-plot-updater
+						adams.flow.sink.sequenceplotter.SimplePlotUpdater
+							-update-interval
+							100
+					-post-processor
+						adams.flow.sink.sequenceplotter.PassThrough
+	-actor
+		adams.flow.standalone.SetVariable
+			-name
+			initial timestamp
+			-var-name
+			timestamp
+			-var-value
+			
+	-actor
+		adams.flow.source.SelectFile
+			-stop-if-canceled
+			true
+			-file-chooser-title
+			Select tweet archives
+			-extension
+			.csv.gz,.csv
+	-actor
+		adams.flow.transformer.SetVariable
+			-var-name
+			archive
+	-actor
+		adams.flow.control.Trigger
+			-name
+			replay
+			-tee
+				adams.flow.source.TweetReplay
+					-replay
+						adams.data.io.input.SpreadSheetConverterArchive
+							-archive
+							@{archive}
+			-tee
+				adams.flow.control.Tee
+					-name
+					determine timestamp
+					-tee
+						adams.flow.transformer.TwitterConverter
+							-converter
+								adams.data.twitter.TextConverter
+									-field
+									CREATED
+									-separator
+									\t
+									-date-format
+									yyyy-MM-dd HH:mm
+					-tee
+						adams.flow.control.ConditionalTee
+							-name
+							timestamp changed?
+							-tee
+								adams.flow.control.ConditionalTrigger
+									-name
+									plot?
+									-tee
+										adams.flow.source.Start
+									-tee
+										adams.flow.control.Trigger
+											-name
+											timestamp to double
+											-tee
+												adams.flow.source.Variable
+													-var-name
+													timestamp
+											-tee
+												adams.flow.transformer.Convert
+													-conversion
+														adams.data.conversion.StringToDateTimeType
+															-format
+															yyyy-MM-dd HH:mm
+															-datetime-type
+															MSECS
+											-tee
+												adams.flow.transformer.SetVariable
+													-var-name
+													timestamp_double
+									-tee
+										adams.flow.control.Trigger
+											-name
+											plot happy
+											-tee
+												adams.flow.source.VariablesArray
+													-var-name
+													timestamp_double
+													-var-name
+													happy
+											-tee
+												adams.flow.control.ArrayProcess
+													-actor
+														adams.flow.transformer.Convert
+															-conversion
+																adams.data.conversion.StringToDouble
+											-tee
+												adams.flow.transformer.MakePlotContainer
+													-plot-name
+													happy
+											-tee
+												adams.flow.sink.CallableSink
+													-callable
+													SequencePlotter
+									-tee
+										adams.flow.control.Trigger
+											-name
+											plot sad
+											-tee
+												adams.flow.source.VariablesArray
+													-var-name
+													timestamp_double
+													-var-name
+													sad
+											-tee
+												adams.flow.control.ArrayProcess
+													-actor
+														adams.flow.transformer.Convert
+															-conversion
+																adams.data.conversion.StringToDouble
+											-tee
+												adams.flow.transformer.MakePlotContainer
+													-plot-name
+													sad
+											-tee
+												adams.flow.sink.CallableSink
+													-callable
+													SequencePlotter
+									-condition
+										adams.flow.condition.bool.Expression
+											-expression
+											\"@{timestamp}\" != \"\" and len(\"@{timestamp}\") > 1
+							-tee
+								adams.flow.transformer.SetVariable
+									-name
+									reset happy
+									-var-name
+									happy
+									-var-value
+									0
+							-tee
+								adams.flow.transformer.SetVariable
+									-name
+									reset sad
+									-var-name
+									sad
+									-var-value
+									0
+							-condition
+								adams.flow.condition.bool.Expression
+									-expression
+									\"X\" != \"@{timestamp}\"
+					-tee
+						adams.flow.transformer.SetVariable
+							-var-name
+							timestamp
+			-tee
+				adams.flow.control.ConditionalTee
+					-name
+					happy
+					-tee
+						adams.flow.transformer.IncVariable
+							-var-name
+							happy
+					-condition
+						adams.flow.condition.bool.TwitterFilterExpression
+							-expression
+							text:"😊" or text:"😂"
+			-tee
+				adams.flow.control.ConditionalTee
+					-name
+					sad
+					-tee
+						adams.flow.transformer.IncVariable
+							-var-name
+							sad
+					-condition
+						adams.flow.condition.bool.TwitterFilterExpression
+							-expression
+							text:"😫" or text:"😭"
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+

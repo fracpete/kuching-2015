@@ -1,0 +1,58 @@
+# Project: adams
+# Date: 2015-11-24 13:14:55
+# User: fracpete
+#
+adams.flow.control.Flow
+	-annotation
+	Filters out tweets with emoticons
+	-actor
+		adams.flow.source.SelectFile
+			-extension
+			.csv.gz
+	-actor
+		adams.flow.transformer.SetVariable
+			-var-name
+			infile
+	-actor
+		adams.flow.control.Tee
+			-tee
+				adams.flow.transformer.Convert
+					-conversion
+						adams.data.conversion.ReplaceFileExtension
+							-extension
+							_emo.csv
+			-tee
+				adams.flow.transformer.SetVariable
+					-var-name
+					outfile
+	-actor
+		adams.flow.transformer.SpreadSheetFileReader
+			-reader
+				adams.data.io.input.CsvSpreadSheetReader
+					-data-row-type
+						adams.data.spreadsheet.DenseDataRow
+					-spreadsheet-type
+						adams.data.spreadsheet.SpreadSheet
+					-missing
+					
+					-chunk-size
+					10000
+	-actor
+		adams.flow.transformer.SpreadSheetRowFilter
+			-finder
+				adams.data.spreadsheet.rowfinder.ByValue
+					-att-index
+					TEXT
+					-reg-exp
+					.*(😊|😂|😫|😭).*
+	-actor
+		adams.flow.sink.SpreadSheetFileWriter
+			-output
+			@{outfile}
+			-writer
+				adams.data.io.output.CsvSpreadSheetWriter
+					-appending
+					true
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+
