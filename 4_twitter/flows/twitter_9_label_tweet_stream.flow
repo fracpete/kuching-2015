@@ -1,0 +1,119 @@
+# Project: adams
+# Date: 2015-11-25 13:51:01
+# User: fracpete
+#
+adams.flow.control.Flow
+	-actor
+		adams.flow.standalone.CallableActors
+			-actor
+				adams.flow.source.WekaClassifierSetup
+					-classifier
+						weka.classifiers.meta.FilteredClassifier
+							-F
+							weka.filters.unsupervised.attribute.StringToWordVector -R first -W 1000 -prune-rate -1.0 -N 0 -stemmer weka.core.stemmers.NullStemmer -stopwords-handler weka.core.stopwords.Null -M 1 -tokenizer "weka.core.tokenizers.TwitterNLPTokenizer -use-lower-case -cleaner \"weka.core.tokenizers.cleaners.MultiCleaner -cleaner weka.core.tokenizers.cleaners.NormalizeDuplicateChars -cleaner weka.core.tokenizers.cleaners.RemoveNonWordCharTokens -cleaner \\\"weka.core.tokenizers.cleaners.RemoveEmoticons -model /home/fracpete/documents/presentations/adams/kuching-2015/4_twitter/flows/data/AFINN-emoticon-8.txt\\\"\""
+							-W
+							weka.classifiers.trees.J48
+							--
+							-C
+							0.25
+							-M
+							2
+			-actor
+				adams.flow.source.StorageValue
+					-name
+					model
+					-storage-name
+					model
+	-actor
+		adams.flow.source.Start
+	-actor
+		adams.flow.control.Trigger
+			-name
+			train model
+			-tee
+				adams.flow.source.SelectFile
+					-stop-if-canceled
+					true
+					-file-chooser-title
+					Select training set
+					-extension
+					arff
+			-tee
+				adams.flow.transformer.WekaFileReader
+					-loader
+						weka.core.converters.AArffLoader
+			-tee
+				adams.flow.transformer.WekaClassSelector
+			-tee
+				adams.flow.transformer.WekaTrainClassifier
+			-tee
+				adams.flow.control.ContainerValuePicker
+					-value
+					Model
+					-switch-outputs
+					true
+			-tee
+				adams.flow.transformer.SetStorageValue
+					-storage-name
+					model
+	-actor
+		adams.flow.control.Trigger
+			-name
+			label tweets
+			-tee
+				adams.flow.source.TwitterListener
+			-tee
+				adams.flow.source.TweetReplay
+					-annotation
+					if off-line
+					-skip
+					true
+					-replay
+						adams.data.io.input.SpreadSheetConverterArchive
+							-archive
+							${HOME}/documents/presentations/adams/kuching-2015/4_twitter/flows/data/adams-archive.csv
+			-tee
+				adams.flow.transformer.TwitterConverter
+					-converter
+						adams.data.twitter.SpreadSheetConverter
+							-data-row-type
+								adams.data.spreadsheet.DenseDataRow
+							-spreadsheet-type
+								adams.data.spreadsheet.SpreadSheet
+			-tee
+				adams.flow.transformer.Convert
+					-conversion
+						adams.data.conversion.SpreadSheetToWekaInstances
+			-tee
+				adams.flow.transformer.WekaFilter
+					-filter
+						weka.filters.unsupervised.attribute.Add
+							-T
+							NOM
+							-N
+							Class
+							-L
+							positive,neutral,negative
+							-C
+							last
+			-tee
+				adams.flow.transformer.WekaClassSelector
+			-tee
+				adams.flow.transformer.WekaInstanceBuffer
+					-operation
+					INSTANCES_TO_INSTANCE
+			-tee
+				adams.flow.transformer.WekaClassifying
+					-model-actor
+					model
+					-on-the-fly
+					true
+					-output-instance
+					true
+			-tee
+				adams.flow.sink.Display
+					-writer
+						adams.data.io.output.NullWriter
+	-flow-execution-listener
+		adams.flow.execution.NullListener
+
