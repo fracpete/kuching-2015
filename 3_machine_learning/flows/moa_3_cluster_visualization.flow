@@ -1,6 +1,7 @@
 # Project: adams
 # Date: 2015-11-23 19:03:21
 # User: fracpete
+# Charset: UTF-8
 #
 adams.flow.control.Flow
 	-actor
